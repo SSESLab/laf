@@ -4,6 +4,7 @@ import math
 import time
 from psychropy import *
 import urllib
+import pandas as pd
 #
 from PyQt5 import QtWebChannel
 from PyQt5.QtWidgets import *
@@ -155,6 +156,7 @@ def read_tmy3(tmy3_name):
 # Read CSV file
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 def read_csv(csv_name, var):
+    global Tdb, Tdew, RH, Patm, Wdir, Wspeed
     ############################
     # CSV file reading
     ############################
@@ -168,248 +170,150 @@ def read_csv(csv_name, var):
     # 6)  Tdew ---Tdbtmy3--> RH
 
     #
-    data2 = read_datafile(csv_name, 1)
-    # try:
-    #     data2 = read_datafile(csv_name, 1)
-    # except (TypeError, ValueError):
-    #     QMessageBox.warning(None, 'Wrong Format', "Check out the CSV file you input, there is something wrong with it.")
+    df = pd.read_csv(csv_name)
+    dimen = df.shape
+    n_columns = dimen[1]
+    columns = []
+    for i in range(0, n_columns):
+        col = df.iloc[:, i]
+        columns.append(col)
+
+    data2 = columns
 
 
-    global Tdb, Tdew, RH, Patm, Wdir, Wspeed
-    #
-    try:
-        numb_columns = len(data2[0, :])
-    except (IndexError):
-        numb_columns = 1
-    else:
-        nothing = 1
-
-    if len(var) > numb_columns:
+    if len(var) > n_columns:
         flag_columns = 33
-    # CASE 0
-    elif 2 and 3 and 4 in var:
+    # ONLY 1 VARIABLE CUSTOMIZED
+    elif len(var) == 1:
         flag_columns = 0
-        if len(var) > 1:
-            for i in range(0, len(var)):
-                if var[i] == 1:
-                    Patm = data2[:,i]
-                elif var[i] == 2:
-                    RH = data2[:,i]
-                elif var[i] == 3:
-                    Tdew = data2[:,i]
-                elif var[i] == 4:
-                    Tdb = data2[:,i]
-                elif var[i] == 5:
-                    Wspeed = data2[:,i]
-                elif var[i] == 6:
-                    Wdir = data2[:,i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-    # CASE 1
-    elif 3 and 4 in var:
-        flag_columns = 0
-        if len(var) > 1:
-            for i in range(0, len(var)):
-                if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
-                elif var[i] == 3:
-                    Tdew = data2[:, i]
-                elif var[i] == 4:
-                    Tdb = data2[:, i]
-                elif var[i] == 5:
-                    Wspeed = data2[:, i]
-                elif var[i] == 6:
-                    Wdir = data2[:, i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
         for i in range(0, 8760):
-            RH[i] = (psych(Patm[i], 'Tdb', Tdb[i], 'DP', Tdew[i], 'RH', 'SI'))*100
-    # CASE 2
-    elif 2 and 4 in var:
+            if var[0] == 1:
+                Patm[i] = data2[0][i]
+            elif var[0] == 2:
+                RH[i] = data2[0][i]
+                Tdew[i] = psych(Patm[i], 'Tdb', Tdb[i], 'RH', RH[i] / 100, 'DP', 'SI')
+            elif var[0] == 3:
+                Tdew[i] = data2[0][i]
+                RH[i] = (psych(Patm[i], 'Tdb', Tdb[i], 'DP', Tdew[i], 'RH', 'SI')) * 100
+            elif var[0] == 4:
+                Tdb[i] = data2[0][i]
+                Tdew[i] = psych(Patm[i], 'Tdb', Tdb[i], 'RH', RH[i] / 100, 'DP', 'SI')
+            elif var[0] == 5:
+                Wspeed[i] = data2[0][i]
+            elif var[0] == 6:
+                Wdir[i] = data2[0][i]
+    #MORE THAN 1 VARIABLE:
+    else:
         flag_columns = 0
-        if len(var) > 1:
+    for j in range(0, 8760):
+        if 4 in var:
+            if 2 in var:
+                if 3 in var:
+                    # DO NOT USE ANY PSYCHROMETRIC RELATIONSHIP, NOT NECESSARY
+                    for i in range(0, len(var)):
+                        if var[i] == 1:
+                            Patm[j] = data2[i][j]
+                        elif var[i] == 2:
+                            RH[j] = data2[i][j]
+                        elif var[i] == 3:
+                            Tdew[j] = data2[i][j]
+                        elif var[i] == 4:
+                            Tdb[j] = data2[i][j]
+                        elif var[i] == 5:
+                            Wspeed[j] = data2[i][j]
+                        elif var[i] == 6:
+                            Wdir[j] = data2[i][j]
+                else:
+                    for i in range(0, len(var)):
+                        if var[i] == 1:
+                            Patm[j] = data2[i][j]
+                        elif var[i] == 2:
+                            RH[j] = data2[i][j]
+                        elif var[i] == 4:
+                            Tdb[j] = data2[i][j]
+                        elif var[i] == 5:
+                            Wspeed[j] = data2[i][j]
+                        elif var[i] == 6:
+                            Wdir[j] = data2[i][j]
+                    Tdew[j] = psych(Patm[j], 'Tdb', Tdb[j], 'RH', RH[j] / 100, 'DP', 'SI')
+            elif 3 in var:
+                for i in range(0, len(var)):
+                    if var[i] == 1:
+                        Patm[j] = data2[i][j]
+                    elif var[i] == 4:
+                        Tdb[j] = data2[i][j]
+                    elif var[i] == 5:
+                        Wspeed[j] = data2[i][j]
+                    elif var[i] == 6:
+                        Wdir[j] = data2[i][j]
+                RH[j] = (psych(Patm[j], 'Tdb', Tdb[j], 'DP', Tdew[j], 'RH', 'SI')) * 100
+            else:
+                for i in range(0, len(var)):
+                    if var[i] == 1:
+                        Patm[j] = data2[i][j]
+                    elif var[i] == 2:
+                        RH[j] = data2[i][j]
+                    elif var[i] == 4:
+                        Tdb[j] = data2[i][j]
+                    elif var[i] == 5:
+                        Wspeed[j] = data2[i][j]
+                    elif var[i] == 6:
+                        Wdir[j] = data2[i][j]
+                Tdew[j] = psych(Patm[j], 'Tdb', Tdb[j], 'RH', RH[j] / 100, 'DP', 'SI')
+        elif 2 in var:
+            if 3 in var:
+                for i in range(0, len(var)):
+                    if var[i] == 1:
+                        Patm[j] = data2[i][j]
+                    elif var[i] == 2:
+                        RH[j] = data2[i][j]
+                    elif var[i] == 3:
+                        Tdew[j] = data2[i][j]
+                    elif var[i] == 5:
+                        Wspeed[j] = data2[i][j]
+                    elif var[i] == 6:
+                        Wdir[j] = data2[i][j]
+                Tdb[j] = psych(Patm[j], 'DP', Tdew[j], 'RH', RH[j] / 100, 'DP', 'SI')
+            else:
+                for i in range(0, len(var)):
+                    if var[i] == 1:
+                        Patm[j] = data2[i][j]
+                    elif var[i] == 2:
+                        RH[j] = data2[i][j]
+                    elif var[i] == 4:
+                        Tdb[j] = data2[i][j]
+                    elif var[i] == 5:
+                        Wspeed[j] = data2[i][j]
+                    elif var[i] == 6:
+                        Wdir[j] = data2[i][j]
+                Tdew[j] = psych(Patm[j], 'Tdb', Tdb[j], 'RH', RH[j] / 100, 'DP', 'SI')
+        elif 3 in var:
             for i in range(0, len(var)):
                 if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
+                    Patm[j] = data2[i][j]
+                # elif var[i] == 2:
+                #     RH = data2[:, i]
                 elif var[i] == 3:
-                    Tdew = data2[:, i]
+                    Tdew[j] = data2[i][j]
                 elif var[i] == 4:
-                    Tdb = data2[:, i]
+                    Tdb[j] = data2[i][j]
                 elif var[i] == 5:
-                    Wspeed = data2[:, i]
+                    Wspeed[j] = data2[i][j]
                 elif var[i] == 6:
-                    Wdir = data2[:, i]
+                    Wdir[j] = data2[i][j]
+            RH[j] = (psych(Patm[j], 'Tdb', Tdb[j], 'DP', Tdew[j], 'RH', 'SI')) * 100
         else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-        for i in range(0, 8760):
-            Tdew[i] = psych(Patm[i], 'Tdb', Tdb[i], 'RH', RH[i] / 100, 'DP', 'SI')
-    # CASE 3
-    elif 2 and 3 in var:
-        flag_columns = 0
-        if len(var) > 1:
             for i in range(0, len(var)):
                 if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
-                elif var[i] == 3:
-                    Tdew = data2[:, i]
-                elif var[i] == 4:
-                    Tdb = data2[:, i]
+                    Patm[j] = data2[i][j]
                 elif var[i] == 5:
-                    Wspeed = data2[:, i]
+                    Wspeed[j] = data2[i][j]
                 elif var[i] == 6:
-                    Wdir = data2[:, i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-        for i in range(0, 8760):
-            Tdb[i] = psych(Patm[i], 'DP', Tdew[i], 'RH', RH[i] / 100, 'DP', 'SI')
-    # CASE 4
-    elif 4 in var:
-        flag_columns = 0
-        if len(var) > 1:
-            for i in range(0, len(var)):
-                if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
-                elif var[i] == 3:
-                    Tdew = data2[:, i]
-                elif var[i] == 4:
-                    Tdb = data2[:, i]
-                elif var[i] == 5:
-                    Wspeed = data2[:, i]
-                elif var[i] == 6:
-                    Wdir = data2[:, i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-        for i in range(0, 8760):
-            Tdew[i] = psych(Patm[i], 'Tdb', Tdb[i], 'RH', RH[i] / 100, 'DP', 'SI')
-    # CASE 5
-    elif 2 in var:
-        flag_columns = 0
-        if len(var) > 1:
-            for i in range(0, len(var)):
-                if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
-                elif var[i] == 3:
-                    Tdew = data2[:, i]
-                elif var[i] == 4:
-                    Tdb = data2[:, i]
-                elif var[i] == 5:
-                    Wspeed = data2[:, i]
-                elif var[i] == 6:
-                    Wdir = data2[:, i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-        for i in range(0, 8760):
-            Tdew[i] = psych(Patm[i], 'Tdb', Tdb[i], 'RH', RH[i] / 100, 'DP', 'SI')
-    # CASE 6
-    elif 3 in var:
-        flag_columns = 0
-        if len(var) > 1:
-            for i in range(0, len(var)):
-                if var[i] == 1:
-                    Patm = data2[:, i]
-                elif var[i] == 2:
-                    RH = data2[:, i]
-                elif var[i] == 3:
-                    Tdew = data2[:, i]
-                elif var[i] == 4:
-                    Tdb = data2[:, i]
-                elif var[i] == 5:
-                    Wspeed = data2[:, i]
-                elif var[i] == 6:
-                    Wdir = data2[:, i]
-        else:
-            if var[0] == 1:
-                Patm = data2
-            elif var[0] == 2:
-                RH = data2
-            elif var[0] == 3:
-                Tdew = data2
-            elif var[0] == 4:
-                Tdb = data2
-            elif var[0] == 5:
-                Wspeed = data2
-            elif var[0] == 6:
-                Wdir = data2
-        for i in range(0, 8760):
-            RH[i] = (psych(Patm[i], 'Tdb', Tdb[i], 'DP', Tdew[i], 'RH', 'SI'))*100
+                    Wdir[j] = data2[i][j]
 
     return flag_columns
+
+
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Write new EPW file
@@ -1259,6 +1163,9 @@ class CustomEPW(QMainWindow):
                 except (UnboundLocalError, ValueError):
                     QMessageBox.warning(self, 'Format Error',
                                         "Check out the CSV file you input, there is something wrong with it.")
+                except (IndexError):
+                    QMessageBox.warning(self, 'Format Error',
+                                        "Check out the CSV file you input, there are less columns than what you selected.")
                 else:
                     if flag_columns > 0:
                         QMessageBox.warning(self, 'CSV file error',
@@ -1272,7 +1179,8 @@ class CustomEPW(QMainWindow):
                             QMessageBox.warning(self, 'Index Error',
                                             "Sorry, we got a IndexError error.\nTry to check the CSV file you input.\nIt might contain data for less than 365 days.")
                         except (ValueError):
-                            QMessageBox.warning(self, 'ValueError', "Sorry, we got a ValueError.")
+                            QMessageBox.warning(self, 'ValueError', "Check out your CSV file.\nSome psychrometric relationship cannot be satisfied,\n"
+                                                                    "maybe you assigned the columns inccorrectly.")
                         except (RuntimeError):
                             QMessageBox.warning(self, 'RuntimeError', "Sorry, we got a RuntimeError.")
                         except (TypeError):
