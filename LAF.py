@@ -106,7 +106,7 @@ def read_tmy3(tmy3_name):
         data = read_datafile(tmy3_name, 8)
         global Y, M, D, HH, MM, Tdb, Tdew, RH, Patm, ExHorRad, ExDirNormRad, HorIR, GHRad, DNRad, DHRad, GHIll, DNIll, DHIll
         global HorIR, GHRad, GHIll, DNIll, DHIll, ZenLum, Wdir, Wspeed, TotSkyCover, OpSkyCover, Visib, CeilH, PrecWater
-        global AerOptDepth, SnowDepth, DSLS, Albedo, LiqPrecDepth, LiqPrecQuant
+        global AerOptDepth, SnowDepth, DSLS, Albedo, LiqPrecDepth, LiqPrecQuant, PresWeathObs, PresWeathCodes
 
         Y = data[:, 0]
         M = data[:, 1]
@@ -335,14 +335,12 @@ def write_epw(save_path):
     writer = csv.writer(ofile, delimiter=',')
     #
     for i in range(0, 8760):
-        row = [int(Y[i]), int(M[i]), int(D[i]), int(HH[i]), int(MM[i]), DS, Tdb[i], Tdew[i], RH[i], Patm[i],
-               ExHorRad[i],
-               ExDirNormRad[i], HorIR[i], GHRad[i], DNRad[i], DHRad[i], GHIll[i], DNIll[i], DHIll[i], HorIR[i],
-               GHRad[i],
-               GHIll[i], DNIll[i], DHIll[i], ZenLum[i], Wdir[i], Wspeed[i], TotSkyCover[i], OpSkyCover[i],
-               Visib[i],
-               CeilH[i],
-               PrecWater[i], AerOptDepth[i], SnowDepth[i], DSLS[i], Albedo[i], LiqPrecDepth[i], LiqPrecQuant[i]]
+        row = [int(Y[i]), int(M[i]), int(D[i]), int(HH[i]), int(MM[i]), DS,
+               Tdb[i], Tdew[i], RH[i], Patm[i], ExHorRad[i], ExDirNormRad[i], HorIR[i],
+               GHRad[i], DNRad[i], DHRad[i], GHIll[i], DNIll[i], DHIll[i], ZenLum[i],
+               Wdir[i], Wspeed[i], TotSkyCover[i], OpSkyCover[i], Visib[i], CeilH[i],
+               PresWeathObs[i], PresWeathCodes[i], PrecWater[i], AerOptDepth[i], SnowDepth[i],
+               DSLS[i], Albedo[i], LiqPrecDepth[i], LiqPrecQuant[i]]
         writer.writerow(row)
     ofile.close()
     return 0
