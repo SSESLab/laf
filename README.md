@@ -17,12 +17,13 @@ http://energysystems.mech.utah.edu/laf
 				On MacOSX, Windows, Linux just type “pip install pyqt5”
 			- Numpy: 
 				On MacOSX and Linux just type “pip install numpy”
-					
-				On Windows download the appropriate version of “Numpy+MKL” from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
+				On Windows download the appropriate version of “Numpy+MKL” from here:
+				http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
 				Then install the package as “pip install numpy….wheel” from the directory where the file was downloaded.
 			- Scipy: 
 				On MacOSX and Linux just type “pip install scipy”
-				On Windows download the appropriate version of “SciPy” from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy
+				On Windows download the appropriate version of “SciPy” from here: 
+				http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy
 				Then install the package as “pip install scipy….wheel” from the directory where the file was downloaded.
 	
 	Once all the dependencies are installed, it is just necessary to run “python LAF.py” from the directory where LAF.py is.
