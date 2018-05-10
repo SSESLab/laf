@@ -10,16 +10,21 @@ http://energysystems.mech.utah.edu/laf
 	It doesn’t require any installation or any prerequisite, just download the application from the website.
 
 - SOURCE CODE:
+
 	If you prefer to use the code though a Python compiler directly, you need:
+	
 			- python 3.5 or 3.6:
 				You can download it directly from: http://python.org/downloads/
+				
 			- PyQt5:
 				On MacOSX, Windows, Linux just type “pip install pyqt5”
+				
 			- Numpy: 
 				On MacOSX and Linux just type “pip install numpy”
 				On Windows download the appropriate version of “Numpy+MKL” from here:
 				http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
 				Then install the package as “pip install numpy….wheel” from the directory where the file was downloaded.
+				
 			- Scipy: 
 				On MacOSX and Linux just type “pip install scipy”
 				On Windows download the appropriate version of “SciPy” from here: 
