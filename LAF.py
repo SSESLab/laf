@@ -328,9 +328,10 @@ def write_epw(save_path):
     ofile.write(header[2])
     ofile.write(header[3])
     ofile.write(header[4])
-    ofile.write('COMMENTS 1,' + str(comm1) + '\n')
-    ofile.write(header[6])
-    ofile.write('DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31\n')
+    ofile.write('COMMENTS 1, ' + str(comm1) + '\n')
+    # ofile.write(header[6])
+    ofile.write('COMMENTS 2, TMY3 data downloaded Climate.Onebuilding.Org - Data merged with the Localized AMY File Creator (LA'+'F)\n')
+    ofile.write('DATA PERIODS,1,1,Data,Sunday, 1/1,12/31\n')
     #
     writer = csv.writer(ofile, delimiter=',')
     #
@@ -524,6 +525,7 @@ def _downloadRequested(item):  # QWebEngineDownloadItem
     item.accept()
     save_path = item.path()
 
+
 class tmy3_page(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -541,7 +543,7 @@ class tmy3_page(QMainWindow):
           #map_canvas { height: 100% }
         </style>
         <script type="text/javascript"
-          src="http://maps.google.com/maps/api/js?sensor=false">
+          src="http://maps.google.com/maps/api/js?key=AIzaSyCi_p9RIzuQ6my0jEklidpxDrAXuNX_JTQ">
         </script>
         <script type="text/javascript">
         var map;
@@ -635,7 +637,7 @@ class MW_Download(QMainWindow):
 <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=yes"/>
     <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCi_p9RIzuQ6my0jEklidpxDrAXuNX_JTQ"></script>
     <!--<script type="text/javascript" src="useless.js"></script>-->
     <script type="text/javascript">
 

@@ -350,7 +350,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                 try:
                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['air_temp_set_1'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['air_temp'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         #**********************************************************************************************
                         if variable_flag == 'relative_humidity':
                             delta_holes = 0
@@ -360,7 +363,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                 try:
                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['relative_humidity_set_1'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['relative_humidity'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         #**********************************************************************************************
                         if variable_flag == 'dew_point_temperature':
                             delta_holes = 0
@@ -370,7 +376,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                 try:
                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['dew_point_temperature_set_1d'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['dew_point_temperature'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         #**********************************************************************************************
                         if variable_flag == 'wind_direction':
                             delta_holes = 0
@@ -380,7 +389,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                 try:
                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_direction_set_1'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_direction'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         # **********************************************************************************************
                         if variable_flag == 'wind_speed':
                             delta_holes = 0
@@ -392,7 +404,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                     Select_variable = (
                                     allstationdata['STATION'][i]['OBSERVATIONS']['wind_speed_set_1'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_speed'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         # **********************************************************************************************
                         if variable_flag == 'pressure':
                             delta_holes = 0
@@ -404,7 +419,10 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
                                     Select_variable = (
                                     allstationdata['STATION'][i]['OBSERVATIONS']['pressure_set_1'])
                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
-                                    delta_holes = 1000
+                                    try:
+                                        Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['pressure'])
+                                    except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+                                        delta_holes = 1000
                         #**********************************************************************************************
 
                     if delta_holes == 0:
