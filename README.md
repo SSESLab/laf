@@ -36,7 +36,7 @@ http://energysystems.mech.utah.edu/laf
 
 
 ######################################################################################
-SOFTWARE ARCHITECTURE:
+USER MANUAL:
 
 Three modules compose LAF: TMY3 module, MesoWest module, and EPW module.
 
