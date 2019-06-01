@@ -1,5 +1,5 @@
 #LAF
-The Localized AMY File converter is a tool to download, modify and customize weather data for building energy simulations.
+The Localized AMY File creator is a tool to download, modify and customize weather data for building energy simulations.
 http://energysystems.mech.utah.edu/laf
 
 # Usage
