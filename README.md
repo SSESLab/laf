@@ -1,6 +1,9 @@
-#LAF
+# LAF
 The Localized AMY File creator is a tool to download, modify and customize weather data for building energy simulations.
 http://energysystems.mech.utah.edu/laf
+
+New! Read the paper (open access): https://doi.org/10.1016/j.softx.2019.100299
+
 
 # Usage
 - MAC OSX: 
