@@ -3,6 +3,8 @@ import sys
 import csv
 import numpy
 import warnings
+import pandas as pd
+
 
 warnings.simplefilter('ignore', numpy.RankWarning)
 
@@ -39,6 +41,23 @@ def date_break(Date):
 
     return year, month, day, hh, mm
 #  ==================================================================================================================== #
+
+
+def create_date_range_from_year_no_tz(year):
+    vector_date_range = pd.date_range(start=str(year) + '-01-01 00:00', end=str(year) + '-12-31 23:00', freq='H')         #This is the right one
+    return vector_date_range
+
+def create_date_range_from_year(year, time_zone):
+    if abs(float(time_zone)) > 9:
+        start_date = str(year) + '0101' + str(int(abs(float(time_zone)))) + '00'
+        end_date = str(int(year) + 1) + '0101' + str(int(abs(float(time_zone)))) + '00'
+    else:
+        start_date = str(year) + '01010' + str(int(abs(float(time_zone)))) + '00'
+        end_date = str(int(year)+1) + '01010' + str(int(abs(float(time_zone)))) + '00'
+    return start_date, end_date
+
+
+
 
 def hourlydata(Variable, Date, month_days, delta_holes_threshold, TimeZone):
 

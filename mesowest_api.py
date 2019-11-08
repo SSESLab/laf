@@ -1,17 +1,84 @@
 import urllib.parse
 import urllib.request
 import urllib.error
+from MesoPy import Meso
+import copy
 import itertools
 import operator
 import numpy
 import sys
 import warnings
 import csv
+import numpy as np
 from MonthlyVectors import *
 from scipy import linspace, polyval, polyfit, sqrt, stats, randn
 from PyQt5.QtWidgets import (QWidget, QPushButton, QLineEdit,
     QInputDialog, QApplication)
 
+def provide_single_column(ts, columns_list, variable):
+    lenght_reference = 0
+    longer_index = 0
+    for i in range(0,len(columns_list)):
+        dummy_list = [x for x in columns_list[i] if ~np.isnan(x)]
+        if (len(dummy_list) > lenght_reference):
+            lenght_reference = len(dummy_list)
+            longer_index = i
+    new_dataset = columns_list[longer_index]
+    for col in ts.columns:
+        if variable in col:
+            ts.drop(col, axis=1, inplace=True)
+    ts[variable] = new_dataset
+    return ts
+
+def eliminate_columns_with_same_name(ts):
+    col_air_temp = []
+    col_dew_temp = []
+    col_pressure = []
+    col_rh = []
+    col_wind_speed = []
+    col_wind_direction = []
+    for col in ts.columns:
+        if 'air_temp' in col:
+            col_air_temp.append(ts[col].to_list())
+        elif 'pressure' in col:
+            col_pressure.append(ts[col].to_list())
+        elif 'direction' in col:
+            col_wind_direction.append(ts[col].to_list())
+        elif 'speed' in col:
+            col_wind_speed.append(ts[col].to_list())
+        elif 'humidity' in col:
+            col_rh.append(ts[col].to_list())
+        elif 'dew' in col:
+            col_dew_temp.append(ts[col].to_list())
+    if len(col_air_temp) > 1:
+        provide_single_column(ts, col_air_temp, 'air_temp')
+    if len(col_pressure) > 1:
+        provide_single_column(ts, col_pressure, 'pressure')
+    if len(col_wind_direction) > 1:
+        provide_single_column(ts, col_wind_direction, 'direction')
+    if len(col_wind_speed) > 1:
+        provide_single_column(ts, col_wind_speed, 'speed')
+    if len(col_rh) > 1:
+        provide_single_column(ts, col_rh, 'humidity')
+    if len(col_dew_temp) > 1:
+        provide_single_column(ts, col_dew_temp, 'dew')
+    return ts
+
+def rename_columns(ts):
+    for col in ts.columns:
+        if 'air_temp' in col:
+            ts.rename(columns={col: 'air_temp'}, inplace=True)
+        elif 'pressure' in col:
+            ts.rename(columns={col: 'pressure'}, inplace=True)
+        elif 'direction' in col:
+            ts.rename(columns={col: 'wind_direction'}, inplace=True)
+        elif 'speed' in col:
+            ts.rename(columns={col: 'wind_speed'}, inplace=True)
+        elif 'humidity' in col:
+            ts.rename(columns={col: 'relative_humidity'}, inplace=True)
+        elif 'dew' in col:
+            ts.rename(columns={col: 'dew_point_temperature'}, inplace=True)
+    return ts
 
 # ==================================================================================================================== #
 #                                               API                                                                    #
@@ -278,11 +345,38 @@ def mw_csv_fun(Matrix, variable_names, path):
 
 # ====================================================================================================================================================================================================================================== #
 # ====================================================================================================================================================================================================================================== #
-def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end, nw_inp):
+def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year, nw_inp, time_zone, list_stid):
     global token, base_url, geo_criteria, station, start, end, endpoint, radius_, nw, delta_holes_threshold, flag_numb_stations_year, variable_flag, lat, long
     lat = lat_inp
     long = long_inp
     variable_flag = variable_flag_inp
+    m = Meso(token=token)
+    variables = ['air_temp', 'dew_point_temperature', 'pressure', 'relative_humidity', 'wind_direction', 'wind_speed']
+    [start_date, end_date] = create_date_range_from_year(year, time_zone)
+    time_series = m.timeseries(stid=list_stid[0], start=start_date, end=end_date, vars=variables)
+    column_names = copy.deepcopy(variables)
+    try:
+        ts = pd.DataFrame(time_series['STATION'][0]["OBSERVATIONS"])
+    except TypeError:
+        print('%%%%%%%%%%%%%  We have an error with ' + str(wmo) + ' %%%%%%%%%%%%%% ')
+        # time_series.to_csv(path_or_buf='weather_data/ERROR/' + list_stid[0] + '_' + str(year) + '.csv', index=False)
+    else:
+        ts['date_time'] = pd.to_datetime(ts['date_time'])
+        ts.index = ts['date_time']
+        ts.drop(['date_time'], axis=1, inplace=True)
+        # It is possible that the API returns multiple columns for the same variable (multiple datasets). We want to make sure we only keep the best dataset.
+        ts = eliminate_columns_with_same_name(ts)
+        ts = ts.reindex(sorted(ts.columns), axis=1)
+        # Rename columns with better names
+        ts = rename_columns(ts)
+        ts_h = ts.resample('H').mean()
+        ####################################################
+        # let's save a copy here
+        print()
+        ts_h.to_csv(path_or_buf=current_path + '/temporary_original/' + str(wmo) + '_' + str(year) + '.csv',
+                    index=True)
+        ####################################################
+
 ##########################################################
     token = 'ca01203d0c9746cd998ee8d0007fdf07'
     base_url = 'http://api.mesowest.net/v2/'
@@ -482,3 +576,256 @@ def MesoWest_fun(lat_inp, long_inp, rad, variable_flag_inp, year_start, year_end
         years_data_empty = 0
         return Average_Over_Years, years_data_empty
 #
+
+
+
+
+# ====================================================================================================================================================================================================================================== #
+# ====================================================================================================================================================================================================================================== #
+def MesoWest_fun2(lat, long, rad_mw, variables, year, list_nw, m):
+    # global token, base_url, geo_criteria, station, start, end, endpoint, radius_, nw, delta_holes_threshold, flag_numb_stations_year, variable_flag, lat, long
+    time_series = m.timeseries(stid='KDEN', start=str(year)+'01010000', end=str(year)+'12312300', vars=variables, obtimezone='UTC')
+    # time_series = m.timeseries(stid='KDEN', start=str(year)+'01010000', end=str(year)+'12312300', vars=variables)
+    column_names = copy.deepcopy(variables)
+    try:
+        ts = pd.DataFrame(time_series['STATION'][0]["OBSERVATIONS"])
+    except TypeError:
+        print('%%%%%%%%%%%%%  We have an error with ' + str(wmo) + ' %%%%%%%%%%%%%% ')
+        # time_series.to_csv(path_or_buf='weather_data/ERROR/' + list_stid[0] + '_' + str(year) + '.csv', index=False)
+    else:
+        ts['date_time'] = pd.to_datetime(ts['date_time'])
+        ts.index = ts['date_time']
+        ts.drop(['date_time'], axis=1, inplace=True)
+        # It is possible that the API returns multiple columns for the same variable (multiple datasets). We want to make sure we only keep the best dataset.
+        ts = eliminate_columns_with_same_name(ts)
+        ts = ts.reindex(sorted(ts.columns), axis=1)
+        # Rename columns with better names
+        ts = rename_columns(ts)
+        print(ts)
+        ts.index = pd.to_datetime(ts.index)
+        ts_h = ts.resample('H').mean()
+        ####################################################
+        # # let's save a copy here
+        # print()
+        # ts_h.to_csv(path_or_buf=current_path + '/temporary_original/' + str(wmo) + '_' + str(year) + '.csv',
+        #             index=True)
+        ###################################################
+    return ts_h
+# ##########################################################
+#     token = 'ca01203d0c9746cd998ee8d0007fdf07'
+#     base_url = 'http://api.mesowest.net/v2/'
+#     endpoint = 'stations/timeseries'
+#     # delta_holes_threshold = 2000
+#     delta_holes_threshold = 20
+#     flag_numb_stations_year = 0
+#     radius_ = [lat, long, rad]
+#     nw = nw_inp
+#     delta_years = int(year_end - year_start)
+#     years = []
+#     for i in range(0, delta_years+1):
+#         years.append(year_start + i)
+#     #
+#     # Get Timezone
+#     start_tz = str(years[0] * 100000000 + 1010000)
+#     end_tz = str(years[0] * 100000000 + 2010000)
+#     TimeZone = get_timezone(start_tz, end_tz)
+#     print('Timezone: ' + str(TimeZone))
+#     #
+#     MultipleYears = []
+#     year_added = 0
+#     for w in range(0, len(years)):              #Loop over multiple years
+#         date_mw = years[w]
+#         months_fun(date_mw, TimeZone)
+#         #*******************************************************************************************************
+#         Variable_year = []
+#         global distance, code_station, elevation, lat_station, long_station, comp_distance
+#         for j in range(0, 12):              #Loop over multiple months
+#             start = start_vec[j]
+#             end = end_vec[j]
+#             allstationdata = api_fun()
+#             numb_stats = allstationdata['SUMMARY']['NUMBER_OF_OBJECTS']
+#             print('numb stats initially')
+#             print(numb_stats)
+#             print('variable flag')
+#             print(variable_flag)
+#             print('coordinates')
+#             print(radius_)
+#             ###################################
+#             if numb_stats is 0:                      #this means there are no data available for this month, so the year cannot be completed
+#                 # flag_numb_stations = 3
+#                 break
+#             else:
+#                 # numb_stats = len(allstationdata['STATION'])
+#                 Stations_Vars = []
+#                 distance = []
+#                 code_station = []
+#                 elevation = []
+#                 lat_station = []
+#                 long_station = []
+#                 comp_distance = []
+#                 for i in range(0, numb_stats):              #Loop over multiple stations
+#                     try:
+#                         Date = allstationdata['STATION'][i]['OBSERVATIONS']['date_time']
+#                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                         delta_holes = 1000
+#                     else:
+#                         #**********************************************************************************************
+#                         if variable_flag == 'air_temp':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['air_temp_set_0'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['air_temp_set_1'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['air_temp'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         #**********************************************************************************************
+#                         if variable_flag == 'relative_humidity':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['relative_humidity_set_0'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['relative_humidity_set_1'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['relative_humidity'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         #**********************************************************************************************
+#                         if variable_flag == 'dew_point_temperature':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['dew_point_temperature_set_0d'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['dew_point_temperature_set_1d'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['dew_point_temperature'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         #**********************************************************************************************
+#                         if variable_flag == 'wind_direction':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_direction_set_0'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_direction_set_1'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_direction'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         # **********************************************************************************************
+#                         if variable_flag == 'wind_speed':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (
+#                                 allstationdata['STATION'][i]['OBSERVATIONS']['wind_speed_set_0'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (
+#                                     allstationdata['STATION'][i]['OBSERVATIONS']['wind_speed_set_1'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['wind_speed'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         # **********************************************************************************************
+#                         if variable_flag == 'pressure':
+#                             delta_holes = 0
+#                             try:
+#                                 Select_variable = (
+#                                 allstationdata['STATION'][i]['OBSERVATIONS']['pressure_set_0'])
+#                             except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                 try:
+#                                     Select_variable = (
+#                                     allstationdata['STATION'][i]['OBSERVATIONS']['pressure_set_1'])
+#                                 except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                     try:
+#                                         Select_variable = (allstationdata['STATION'][i]['OBSERVATIONS']['pressure'])
+#                                     except (ValueError, RuntimeError, TypeError, NameError, KeyError):
+#                                         delta_holes = 1000
+#                         #**********************************************************************************************
+#
+#                     if delta_holes == 0:
+#                         # print('Select Variable')
+#                         # print(Select_variable)
+#                         try:
+#                             (Var_output, delta_holes) = hourlydata(Select_variable, Date, month_days[j],
+#                                                                    delta_holes_threshold, TimeZone)
+#                         except (IndexError, KeyError):
+#                             delta_holes = 100
+#                         else:
+#                             nothing = 1
+#
+#                     if delta_holes <= delta_holes_threshold:
+#                         Stations_Vars.append(Var_output)
+#                         code_station.append(allstationdata['STATION'][i]['STID'])
+#                         # print(allstationdata['STATION'][i]['STID'])
+#                         distance.append(allstationdata['STATION'][i]['DISTANCE'])
+#                         elevation.append(allstationdata['STATION'][i]['ELEVATION'])
+#                         lat_station.append(allstationdata['STATION'][i]['LATITUDE'])
+#                         long_station.append(allstationdata['STATION'][i]['LONGITUDE'])
+#
+#                 if len(Stations_Vars) > 0:
+#                     Vec_average = []
+#                     for h in range(0, len(Stations_Vars[0])):
+#                         Var_timestep = []
+#                         for i in range(0, len(Stations_Vars)):
+#                             Var_timestep.append(Stations_Vars[i][h])
+#                         Var_average_i = weights_fun(Var_timestep, lat_station, long_station)
+#                         Vec_average.append(Var_average_i)
+#                     Variable_year = Variable_year + Vec_average             #add month to the year
+#                 else:
+#                     numb_stats = 0
+#                     break
+#         # End of the year
+#         print('numb_stats and month/year')
+#         print(numb_stats)
+#         print(j)
+#         print(date_mw)
+#         if numb_stats > 0:          #If every month was full of data with an acceptable number of holes
+#             MultipleYears.append(Variable_year)
+#             year_added = year_added + 1
+#     # End of multiple years
+#     print('len multipleyears')
+#     print(len(MultipleYears))
+#     if len(MultipleYears) < 1:
+#         flag_numb_stations_year = 5
+#         years_data_empty = 5
+#         return [], years_data_empty
+#     else:
+#         Average_Over_Years = []
+#         for i in range(0, len(MultipleYears[0])):
+#             variable_buffer = 0
+#             for j in range(0, len(MultipleYears)):
+#                 variable_buffer = variable_buffer + MultipleYears[j][i]
+#             Average_Over_Years.append(variable_buffer/len(MultipleYears))
+#         years_data_empty = 0
+#         return Average_Over_Years, years_data_empty
+# #
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+
+
+
+
+
+
+

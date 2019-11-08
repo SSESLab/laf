@@ -5,7 +5,8 @@ import time
 from psychropy import *
 import urllib
 import pandas as pd
-#
+import numpy as np
+import MesoPy as Meso
 from PyQt5 import QtWebChannel
 from PyQt5.QtWidgets import *
 #
@@ -62,8 +63,7 @@ def t2v(text):
         else:
             i = i + 1
     return line
-
-
+#
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Read TMY3 file
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -312,9 +312,7 @@ def read_csv(csv_name, var):
                     Wdir[j] = data2[i][j]
 
     return flag_columns
-
-
-
+#
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Write new EPW file
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -465,7 +463,6 @@ def read_datafile(file_name, skiplines):
     data = numpy.genfromtxt(file_name, delimiter=',', skip_header=skiplines)
     return data
 #
-
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Main Page
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -524,7 +521,6 @@ def _downloadRequested(item):  # QWebEngineDownloadItem
     print(type(item))
     item.accept()
     save_path = item.path()
-
 
 class tmy3_page(QMainWindow):
     def __init__(self):
@@ -832,7 +828,6 @@ function initialize(lat_init, long_init) {
                 float("{0:.2f}".format(Area_rad_mw))) + ' squared miles, you may want to reduce the radius'
             QMessageBox.warning(None, 'Large Radius', message_rad)
 
-
     def nw_info(self):
         self.nw_class = NW()
         self.nw_class.show()
@@ -870,7 +865,6 @@ function initialize(lat_init, long_init) {
                            address[i] + "')"
                 self.mwapi.html_code.page().runJavaScript(argument)
 
-
     def y_start(self, text):
         global year_start
         year_start = int(text)
@@ -902,7 +896,7 @@ function initialize(lat_init, long_init) {
         Delta = ThisYear - int(year_end)
         if Delta > 0:
             if year_start > year_end:
-                QMessageBox.warning(self, 'Wrong Year', "Wait, we can't go back in time yet yet!\n Correct the years to simulate")
+                QMessageBox.warning(self, 'Wrong Year', "Wait, we can't go back in time yet!\n Correct the years to simulate")
             else:
                 self.flag_date = 3
         else:
@@ -925,6 +919,7 @@ function initialize(lat_init, long_init) {
             return 99
 
     def variable_list(self):
+        # If checkbox is checked, append number of the chosen variable in the option to the variables_mw
         variables_mw = []
         list_nw = []
         check_nw = 0
@@ -971,26 +966,18 @@ function initialize(lat_init, long_init) {
         #
         [variables_mw, list_nw, check_nw] = self.variable_list()
         #
-        print('list_nw')
-        print(list_nw)
-        print('variables_mw')
-        print(variables_mw)
-        #
         self.flag_date = 0
         self.Date()
         if 99 in variables_mw:
             QMessageBox.warning(self, 'No Variable Selected', "One or more columns have been selected but no variable has been chosen")
         else:
             if self.flag_date == 3:
-                if 'rad_mw' in globals():
-                    nothing = 1
-                else:
+                if 'rad_mw'  not in globals():
                     global rad_mw
                     rad_mw = 5
-                years_data_empty = 0
                 global variable_flag, nw
-                TotalYearlyVariables = []
                 variable_names = []
+                # get variables_mw and for each number get corresponding variable name
                 for i in range(0, len(variables_mw)):
                     if variables_mw[i] == 1:
                         variable_flag = 'pressure'
@@ -1004,12 +991,15 @@ function initialize(lat_init, long_init) {
                         variable_flag = 'wind_speed'
                     elif variables_mw[i] == 6:
                         variable_flag = 'wind_direction'
-                    (YearlyVariable_final, years_data_empty) = MesoWest_fun(self.latitude_marker, self.longitude_marker, rad_mw, variable_flag, year_start, year_end, list_nw[i])
-                    if years_data_empty == 5:
-                        break
-                    else:
-                        TotalYearlyVariables.append(YearlyVariable_final)
-                        variable_names.append(variable_flag)
+                    variable_names.append(variable_flag)
+                variable_names = np.unique(variable_names)
+
+                # obtimezone
+                token = 'ca01203d0c9746cd998ee8d0007fdf07'
+                m = Meso(token=token)
+                YearlyVariable_final = MesoWest_fun2(self.latitude_marker, self.longitude_marker,
+                                                                        rad_mw, variable_names, year_start, list_nw[i], m)
+                print(YearlyVariable_final)
                 #
                 print('len variables_mw')
                 print(len(variables_mw))
