@@ -2,7 +2,9 @@
 The Localized AMY File creator is a tool to download, modify and customize weather data for building energy simulations.
 http://energysystems.mech.utah.edu/laf
 
-New! Read the paper (open access): https://doi.org/10.1016/j.softx.2019.100299
+Read the paper (open access): https://doi.org/10.1016/j.softx.2019.100299
+
+Citation: Carlo Bianchi, Amanda D. Smith, Localized Actual Meteorological Year File Creator (LAF): A tool for using locally observed weather data in building energy simulations, SoftwareX, Volume 10, 2019, 100299.
 
 
 # Usage
